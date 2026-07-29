@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Camp Check-in</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: #ddd0eb;
+      min-height: 100vh;
+      padding: 14px 12px 24px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .container {
+      max-width: 480px;
+      width: 100%;
+      background: rgba(245, 240, 255, 0.70);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 24px;
+      padding: 20px 18px 24px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e2a3a;
+      letter-spacing: -0.2px;
+    }
+
+    .header .sub {
+      font-size: 12px;
+      color: #7a8a9e;
+      margin-top: 0px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #2d3e50;
+      margin-bottom: 2px;
+    }
+
+    .form-group label .ar {
+      font-weight: 400;
+      color: #8a9aa8;
+      font-size: 11px;
+      margin-left: 4px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 15px;
+      border: 1.5px solid rgba(44, 62, 80, 0.12);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      font-family: inherit;
+      appearance: auto;
+      color: #1e2a3a;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      border-color: #4a7cb5;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 0 3px rgba(74, 124, 181, 0.10);
+    }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+      color: #b0bec5;
+    }
+
+    .form-group input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    .form-group input[type="number"]::-webkit-outer-spin-button,
+    .form-group input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 36px;
+      padding: 6px 12px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      touch-action: manipulation;
+      color: #fff;
+      background: #3d5a73;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      transform: none;
+    }
+
+    .btn-submit {
+      background: #3d5a73;
+      margin-top: 6px;
+    }
+    .btn-submit.loading {
+      background: #5a7a8a;
+    }
+    .btn-submit.success {
+      background: #3a7a5a;
+    }
+    .btn-submit.error {
+      background: #b55353;
+    }
+
+    .btn-report {
+      background: #4a5a6a;
+      margin-top: 6px;
+      padding: 12px;
+      font-size: 15px;
+    }
+    .btn-report:active {
+      background: #3a4a5a;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(44, 62, 80, 0.08);
+      margin: 16px 0 12px;
+    }
+
+    .toast {
+      margin-top: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      display: none;
+      text-align: center;
+    }
+    .toast.show {
+      display: block;
+    }
+    .toast.success {
+      background: rgba(58, 122, 90, 0.12);
+      color: #2d6a4f;
+      border: 1px solid rgba(58, 122, 90, 0.20);
+    }
+    .toast.error {
+      background: rgba(181, 83, 83, 0.10);
+      color: #a04545;
+      border: 1px solid rgba(181, 83, 83, 0.18);
+    }
+    .toast.info {
+      background: rgba(74, 124, 181, 0.08);
+      color: #3a6a8a;
+      border: 1px solid rgba(74, 124, 181, 0.15);
+    }
+
+    .cache-badge {
+      font-size: 11px;
+      color: #7a8a9e;
+      text-align: right;
+      margin-top: 0px;
+      display: none;
+    }
+    .cache-badge.show {
+      display: block;
+    }
+
+    .report-area {
+      margin-top: 12px;
+      display: none;
+    }
+    .report-area.open {
+      display: block;
+    }
+
+    .report-card {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .report-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e2a3a;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .report-card .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.04);
+      color: #3d4a5a;
+    }
+    .report-card .badge.ok {
+      background: rgba(58, 122, 90, 0.12);
+      color: #2d6a4f;
+    }
+    .report-card .badge.miss {
+      background: rgba(181, 83, 83, 0.10);
+      color: #a04545;
+    }
+
+    .group-block {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border-radius: 8px;
+      border-left: 3px solid #4a7cb5;
+    }
+    .group-block .gl {
+      font-weight: 700;
+      color: #1e2a3a;
+      font-size: 13px;
+    }
+    .group-block .section {
+      font-size: 12px;
+      color: #5a6a7a;
+      margin-left: 6px;
+    }
+    .group-block .room-item {
+      font-size: 13px;
+      color: #1e2a3a;
+      padding: 2px 0 2px 14px;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    }
+    .group-block .room-item:last-child {
+      border-bottom: none;
+    }
+    .group-block .room-item .leader {
+      color: #6a7a8a;
+      font-size: 12px;
+    }
+
+    .empty-state {
+      color: #6a7a8a;
+      font-size: 13px;
+      text-align: center;
+      padding: 14px 0;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 3px solid rgba(255, 255, 255, 0.25);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.10);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <h1>⛑️ Camp Check-in</h1>
+    <div class="sub">Daily HeadCount Report</div>
+  </div>
+
+  <form id="checkinForm" autocomplete="off">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Camp <span class="ar">(المخيم)</span></label>
+        <input type="text" id="camp" placeholder="Camp" />
+      </div>
+      <div class="form-group">
+        <label>Room <span class="ar">(الغرفة)</span></label>
+        <input type="text" id="room" placeholder="101" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Total <span class="ar">(إجمالي)</span></label>
+        <input type="number" id="totalPeople" placeholder="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label>HeadCount <span class="ar">(الحاضرين)</span></label>
+        <input type="number" id="headCount" placeholder="0" min="0" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Shift <span class="ar">(الفترة)</span></label>
+        <select id="shift">
+          <option value="">Select...</option>
+          <option value="1st">1st</option>
+          <option value="2nd">2nd</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>BGPID <span class="ar">(معرف BGPID)</span></label>
+        <input type="text" id="bgpid" placeholder="BGP-001" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Dormitory Head <span class="ar">(رئيس السكن)</span></label>
+      <input type="text" id="dormitoryHead" placeholder="Name" />
+    </div>
+
+    <div class="form-group">
+      <label>Comment <span class="ar">(ملاحظات)</span></label>
+      <textarea id="comment" placeholder="Optional notes..." rows="2"></textarea>
+    </div>
+
+    <div class="cache-badge" id="cacheBadge">📂 Loaded from saved data</div>
+
+    <button type="submit" class="btn btn-submit" id="submitBtn">
+      📤 Submit (تقديم)
+    </button>
+  </form>
+
+  <div class="toast" id="toast"></div>
+
+  <hr class="divider" />
+
+  <button class="btn btn-report" id="reportBtn">
+    📋 View Report (عرض التقرير)
+  </button>
+
+  <div class="report-area" id="reportArea">
+    <div id="reportContent"></div>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  //  CONFIG
+  // ============================================================
+  const USE_MOCK = true;
+  const API_BASE = 'https://your-vercel-app.vercel.app/api';
+  const CACHE_KEY = 'checkin_form_data';
+
+  // ============================================================
+  //  DOM refs
+  // ============================================================
+  const form = document.getElementById('checkinForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const reportBtn = document.getElementById('reportBtn');
+  const toast = document.getElementById('toast');
+  const cacheBadge = document.getElementById('cacheBadge');
+  const reportArea = document.getElementById('reportArea');
+  const reportContent = document.getElementById('reportContent');
+
+  const fields = {
+    camp: document.getElementById('camp'),
+    room: document.getElementById('room'),
+    totalPeople: document.getElementById('totalPeople'),
+    headCount: document.getElementById('headCount'),
+    shift: document.getElementById('shift'),
+    bgpid: document.getElementById('bgpid'),
+    dormitoryHead: document.getElementById('dormitoryHead'),
+    comment: document.getElementById('comment'),
+  };
+
+  // ============================================================
+  //  TOAST
+  // ============================================================
+  let toastTimer = null;
+
+  function showToast(msg, type) {
+    toast.textContent = msg;
+    toast.className = 'toast show ' + (type || 'info');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.className = 'toast';
+    }, 4000);
+  }
+
+  // ============================================================
+  //  CACHE - 核心：永远只保存，永远不清空
+  // ============================================================
+  function saveCache() {
+    const data = {};
+    for (const [key, el] of Object.entries(fields)) {
+      data[key] = el.value;
+    }
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  }
+
+  function loadCache() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      let loaded = false;
+      for (const [key, el] of Object.entries(fields)) {
+        if (data[key] !== undefined && data[key] !== '') {
+          el.value = data[key];
+          loaded = true;
+        }
+      }
+      return loaded;
+    } catch {
+      return false;
+    }
+  }
+
+  // 任何输入变化都保存
+  for (const el of Object.values(fields)) {
+    el.addEventListener('input', () => {
+      saveCache();
+      cacheBadge.classList.remove('show');
+    });
+    el.addEventListener('change', () => {
+      saveCache();
+    });
+  }
+
+  // 页面加载时恢复缓存
+  const hasCache = loadCache();
+  if (hasCache) {
+    cacheBadge.classList.add('show');
+    setTimeout(() => cacheBadge.classList.remove('show'), 4000);
+  }
+
+  // ============================================================
+  //  SUBMIT - 永远不清空表单
+  // ============================================================
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    // 收集数据（只读，不修改任何 input 的 value）
+    const payload = {
+      camp: fields.camp.value.trim(),
+      room: fields.room.value.trim(),
+      totalPeople: fields.totalPeople.value.trim(),
+      headCount: fields.headCount.value.trim(),
+      shift: fields.shift.value,
+      bgpid: fields.bgpid.value.trim(),
+      dormitoryHead: fields.dormitoryHead.value.trim(),
+      comment: fields.comment.value.trim(),
+    };
+
+    // ---- 校验 ----
+    if (!payload.camp) {
+      showToast('Please enter Camp', 'error');
+      fields.camp.focus();
+      return;
+    }
+    if (!payload.room) {
+      showToast('Please enter Room', 'error');
+      fields.room.focus();
+      return;
+    }
+    if (payload.totalPeople === '' || isNaN(payload.totalPeople) || parseInt(payload.totalPeople) < 0) {
+      showToast('Please enter valid Total People', 'error');
+      fields.totalPeople.focus();
+      return;
+    }
+    if (payload.headCount === '' || isNaN(payload.headCount) || parseInt(payload.headCount) < 0) {
+      showToast('Please enter valid HeadCount', 'error');
+      fields.headCount.focus();
+      return;
+    }
+    if (payload.shift !== '1st' && payload.shift !== '2nd') {
+      showToast('Please select Shift (1st or 2nd)', 'error');
+      fields.shift.focus();
+      return;
+    }
+
+    // ---- 提交 ----
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+    submitBtn.innerHTML = '<span class="loading-spinner"></span> Submitting...';
+
+    try {
+      let result;
+      if (USE_MOCK) {
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        if (Math.random() < 0.9) {
+          result = { success: true, message: 'Check-in saved (mock)' };
+        } else {
+          throw new Error('Mock network error');
+        }
+      } else {
+        const params = new URLSearchParams(payload);
+        const resp = await fetch(`${API_BASE}/checkin?${params}`);
+        result = await resp.json();
+        if (!resp.ok) throw new Error(result.message || 'Server error');
+      }
+
+      if (result.success) {
+        submitBtn.classList.remove('loading', 'error');
+        submitBtn.classList.add('success');
+        submitBtn.innerHTML = '✅ Submitted!';
+        showToast('✅ Check-in successful!', 'success');
+        // ✅ 只保存，不清空任何字段
+        saveCache();
+      } else {
+        throw new Error(result.message || 'Unknown error');
+      }
+
+    } catch (err) {
+      submitBtn.classList.remove('loading', 'success');
+      submitBtn.classList.add('error');
+      submitBtn.innerHTML = '❌ Failed';
+      showToast('❌ Submit failed: ' + err.message, 'error');
+      // ✅ 失败时也保存，保留用户输入
+      saveCache();
+      setTimeout(() => {
+        submitBtn.classList.remove('error');
+        submitBtn.innerHTML = '📤 Submit (تقديم)';
+        submitBtn.disabled = false;
+      }, 3000);
+      return;
+    }
+
+    // ✅ 恢复按钮状态，但绝对不清空任何字段
+    setTimeout(() => {
+      submitBtn.classList.remove('loading', 'success');
+      submitBtn.innerHTML = '📤 Submit (تقديم)';
+      submitBtn.disabled = false;
+    }, 2500);
+  });
+
+  // ============================================================
+  //  REPORT
+  // ============================================================
+  reportBtn.addEventListener('click', async function() {
+    reportBtn.disabled = true;
+    reportBtn.innerHTML = '<span class="loading-spinner"></span> Loading...';
+    reportArea.classList.remove('open');
+
+    try {
+      let data;
+      if (USE_MOCK) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        data = {
+          success: true,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          shifts: {
+            first: {
+              label: '1st Shift',
+              allReported: false,
+              missing: [
+                { room: '101', leader: 'Ahmed', groupLeader: 'Mohammed Al-Fahd', section: 'Section A' },
+                { room: '103', leader: 'Khalid', groupLeader: 'Mohammed Al-Fahd', section: 'Section A' },
+                { room: '201', leader: 'Saud', groupLeader: 'Abdullah Al-Qahtani', section: 'Section B' },
+              ]
+            },
+            second: {
+              label: '2nd Shift',
+              allReported: true,
+              missing: []
+            }
+          }
+        };
+      } else {
+        const resp = await fetch(`${API_BASE}/report`);
+        data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.message || 'Report failed');
+      }
+
+      renderReport(data);
+      reportArea.classList.add('open');
+
+    } catch (err) {
+      showToast('❌ Report failed: ' + err.message, 'error');
+      reportContent.innerHTML = `<div class="empty-state">❌ Failed to load report: ${err.message}</div>`;
+      reportArea.classList.add('open');
+    }
+
+    reportBtn.disabled = false;
+    reportBtn.innerHTML = '📋 View Report (عرض التقرير)';
+  });
+
+  // ============================================================
+  //  RENDER REPORT
+  // ============================================================
+  function renderReport(data) {
+    if (!data.success) {
+      reportContent.innerHTML = `<div class="empty-state">❌ ${data.message || 'Unknown error'}</div>`;
+      return;
+    }
+
+    const shifts = data.shifts || {};
+    const first = shifts.first || { missing: [], allReported: true };
+    const second = shifts.second || { missing: [], allReported: true };
+
+    let html = `<div style="font-size:12px;color:#6a7a8a;margin-bottom:6px;">📅 ${data.date || 'Today'}</div>`;
+    html += renderShiftBlock('🔵', '1st Shift', first);
+    html += renderShiftBlock('🔴', '2nd Shift', second);
+
+    reportContent.innerHTML = html;
+  }
+
+  function renderShiftBlock(icon, label, shiftData) {
+    const missing = shiftData.missing || [];
+    const allReported = shiftData.allReported;
+
+    let html = `<div class="report-card">`;
+    html += `<h3>${icon} ${label} <span class="badge ${allReported ? 'ok' : 'miss'}">${allReported ? '✅ Complete' : missing.length + ' missing'}</span></h3>`;
+
+    if (allReported || missing.length === 0) {
+      html += `<div class="empty-state">✅ All rooms reported</div>`;
+    } else {
+      const groups = {};
+      for (const item of missing) {
+        const gl = item.groupLeader || 'Unknown';
+        const section = item.section || '';
+        const key = gl + '|||' + section;
+        if (!groups[key]) groups[key] = { groupLeader: gl, section: section, rooms: [] };
+        groups[key].rooms.push(item);
+      }
+
+      for (const key of Object.keys(groups)) {
+        const g = groups[key];
+        html += `<div class="group-block">`;
+        html += `<div class="gl">👤 ${g.groupLeader} <span class="section">📍 ${g.section}</span></div>`;
+        for (const r of g.rooms) {
+          html += `<div class="room-item">
+            <span>❌ Room ${r.room}</span>
+            <span class="leader">${r.leader || ''}</span>
+          </div>`;
+        }
+        html += `</div>`;
+      }
+    }
+
+    html += `</div>`;
+    return html;
+  }
+
+  // ============================================================
+  //  KEYBOARD SHORTCUT
+  // ============================================================
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      form.dispatchEvent(new Event('submit'));
+    }
+  });
+
+  console.log('✅ Check-in page loaded (Mock mode: ON)');
+  console.log('📂 Cached data:', localStorage.getItem(CACHE_KEY));
+</script>
+</body>
+</html>
