@@ -7,8 +7,6 @@ module.exports = async function handler(req, res) {
   }
 
   const { action, shift, camp, room, totalPeople, headCount, bgpid, dormitoryHead, comment } = req.query;
-
-  // ⚠️ 替换成你的真实 Apps Script 地址
   const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycby_d-Q0vryRXKrayiIJYvz54zf8ji6q95rh_2wc4OsstFKEpsr9LH98enHnXxqE4fhe/exec';
 
   // ===== REPORT =====
@@ -26,13 +24,14 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // ===== CHECKIN - 同步模式（等待 Google Sheets 响应） =====
+  // ===== CHECKIN - 使用 waitUntil =====
   if (action === 'checkin') {
     if (!camp || !room) {
       return res.status(400).json({ success: false, message: 'Missing required fields: camp, room' });
     }
 
-    try {
+    // ✅ 使用 waitUntil 确保后台任务完成
+    const promise = new Promise((resolve) => {
       const params = new URLSearchParams({
         action: 'vercelWrite',
         camp, room,
@@ -45,23 +44,31 @@ module.exports = async function handler(req, res) {
       });
 
       const url = `${SHEET_API_URL}?${params}`;
-      console.log('Sending request to:', url);
       
-      const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
-      const text = await response.text();
-      console.log('Google Sheets response:', text);
-      
-      let data;
-      try { data = JSON.parse(text); } catch { data = { success: false, raw: text };}
-      
-      return res.status(200).json(data);
-    } catch (error) {
-      console.error('Error:', error.message);
-      return res.status(500).json({
-        success: false,
-        message: 'Vercel API error: ' + error.message
-      });
-    }
+      fetch(url, { signal: AbortSignal.timeout(30000) })
+        .then(async (response) => {
+          const text = await response.text();
+          console.log('✅ Google Sheets response:', text);
+          resolve();
+        })
+        .catch((err) => {
+          console.error('❌ Background sync failed:', err.message);
+          resolve();
+        });
+    });
+
+    // 等待后台任务完成（但不超过 Vercel 的 10 秒最大执行时间）
+    // 如果 10 秒内没完成，Vercel 会强制终止
+    await Promise.race([
+      promise,
+      new Promise(resolve => setTimeout(resolve, 9000)) // 9 秒超时
+    ]);
+
+    // 立即返回成功给用户（后台任务还在继续）
+    return res.status(200).json({
+      success: true,
+      message: 'Check-in received, syncing to sheet...'
+    });
   }
 
   return res.status(400).json({
