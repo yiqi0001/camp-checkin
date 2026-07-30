@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
   // Vercel 自动解析 query 参数
   const { action, shift, camp, room, totalPeople, headCount, bgpid, dormitoryHead, comment } = req.query;
 
-  const SHEET_API_URL = 'https://script.google.com/macros/s/你的地址/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycby_d-Q0vryRXKrayiIJYvz54zf8ji6q95rh_2wc4OsstFKEpsr9LH98enHnXxqE4fhe/exec';
 
   // ===== REPORT =====
   if (action === 'report') {
