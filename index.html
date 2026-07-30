@@ -399,9 +399,14 @@
 
   <hr class="divider" />
 
-  <button class="btn btn-report" id="reportBtn">
-    📋 View Report (عرض التقرير)
-  </button>
+  <div class="form-row" style="gap: 10px;">
+    <button class="btn btn-report" id="reportBtn1st" style="flex:1;">
+      📋 1st Report (التقرير الأول)
+    </button>
+    <button class="btn btn-report" id="reportBtn2nd" style="flex:1;">
+      📋 2nd Report (التقرير الثاني)
+    </button>
+  </div>
 
   <div class="report-area" id="reportArea">
     <div id="reportContent"></div>
@@ -608,73 +613,95 @@
   // ============================================================
   //  REPORT
   // ============================================================
-  reportBtn.addEventListener('click', async function() {
-    reportBtn.disabled = true;
-    reportBtn.innerHTML = '<span class="loading-spinner"></span> Loading...';
-    reportArea.classList.remove('open');
+  // ============================================================
+//  REPORT - 1st Shift
+// ============================================================
+document.getElementById('reportBtn1st').addEventListener('click', async function() {
+  await loadReport('1st');
+});
 
-    try {
-      let data;
-      if (USE_MOCK) {
-        await new Promise(resolve => setTimeout(resolve, 800));
+// ============================================================
+//  REPORT - 2nd Shift
+// ============================================================
+document.getElementById('reportBtn2nd').addEventListener('click', async function() {
+  await loadReport('2nd');
+});
+
+// ============================================================
+//  通用报告加载函数
+// ============================================================
+async function loadReport(shift) {
+  const btn = document.getElementById(shift === '1st' ? 'reportBtn1st' : 'reportBtn2nd');
+  const originalText = btn.innerHTML;
+  
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span> Loading...';
+  reportArea.classList.remove('open');
+
+  try {
+    let data;
+    if (USE_MOCK) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      // Mock 数据：根据 shift 返回不同数据
+      if (shift === '1st') {
         data = {
           success: true,
           date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-          shifts: {
-            first: {
-              label: '1st Shift',
-              allReported: false,
-              missing: [
-                { room: '101', leader: 'Ahmed', groupLeader: 'Mohammed Al-Fahd', section: 'Section A' },
-                { room: '103', leader: 'Khalid', groupLeader: 'Mohammed Al-Fahd', section: 'Section A' },
-                { room: '201', leader: 'Saud', groupLeader: 'Abdullah Al-Qahtani', section: 'Section B' },
-              ]
-            },
-            second: {
-              label: '2nd Shift',
-              allReported: true,
-              missing: []
-            }
-          }
+          shift: '1st',
+          allReported: false,
+          missing: [
+            { room: '101', leader: 'Ahmed', groupLeader: 'Mohammed Al-Fahd', section: 'Section A' },
+            { room: '103', leader: 'Khalid', groupLeader: 'Mohammed Al-Fahd', section: 'Section A' },
+            { room: '201', leader: 'Saud', groupLeader: 'Abdullah Al-Qahtani', section: 'Section B' },
+          ]
         };
       } else {
-        const resp = await fetch(`${API_BASE}/report`);
-        data = await resp.json();
-        if (!resp.ok || !data.success) throw new Error(data.message || 'Report failed');
+        data = {
+          success: true,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          shift: '2nd',
+          allReported: true,
+          missing: []
+        };
       }
-
-      renderReport(data);
-      reportArea.classList.add('open');
-
-    } catch (err) {
-      showToast('❌ Report failed: ' + err.message, 'error');
-      reportContent.innerHTML = `<div class="empty-state">❌ Failed to load report: ${err.message}</div>`;
-      reportArea.classList.add('open');
+    } else {
+      const resp = await fetch(`${API_BASE}/report?shift=${shift}`);
+      data = await resp.json();
+      if (!resp.ok || !data.success) throw new Error(data.message || 'Report failed');
     }
 
-    reportBtn.disabled = false;
-    reportBtn.innerHTML = '📋 View Report (عرض التقرير)';
-  });
+    renderReport(data, shift);
+    reportArea.classList.add('open');
+
+  } catch (err) {
+    showToast('❌ Report failed: ' + err.message + ' (فشل تحميل التقرير)', 'error');
+    reportContent.innerHTML = `<div class="empty-state">❌ Failed to load report: ${err.message}</div>`;
+    reportArea.classList.add('open');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = originalText;
+}
 
   // ============================================================
   //  RENDER REPORT
   // ============================================================
-  function renderReport(data) {
-    if (!data.success) {
-      reportContent.innerHTML = `<div class="empty-state">❌ ${data.message || 'Unknown error'}</div>`;
-      return;
-    }
-
-    const shifts = data.shifts || {};
-    const first = shifts.first || { missing: [], allReported: true };
-    const second = shifts.second || { missing: [], allReported: true };
-
-    let html = `<div style="font-size:12px;color:#6a7a8a;margin-bottom:6px;">📅 ${data.date || 'Today'}</div>`;
-    html += renderShiftBlock('🔵', '1st Shift', first);
-    html += renderShiftBlock('🔴', '2nd Shift', second);
-
-    reportContent.innerHTML = html;
+  function renderReport(data, shift) {
+  if (!data.success) {
+    reportContent.innerHTML = `<div class="empty-state">❌ ${data.message || 'Unknown error'}</div>`;
+    return;
   }
+
+  const shiftLabel = shift === '1st' ? '1st Shift' : '2nd Shift';
+  const icon = shift === '1st' ? '🔵' : '🔴';
+  const missing = data.missing || [];
+  const allReported = data.allReported;
+
+  let html = `<div style="font-size:12px;color:#6a7a8a;margin-bottom:6px;">📅 ${data.date || 'Today'} - ${shiftLabel}</div>`;
+  html += renderShiftBlock(icon, shiftLabel, { missing: missing, allReported: allReported });
+
+  reportContent.innerHTML = html;
+}
 
   function renderShiftBlock(icon, label, shiftData) {
     const missing = shiftData.missing || [];
