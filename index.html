@@ -570,7 +570,7 @@
         submitBtn.classList.remove('loading', 'error');
         submitBtn.classList.add('success');
         submitBtn.innerHTML = '✅ Submitted!';
-        showToast('✅ Check-in successful!', 'success');
+	showToast('✅ Check-in successful! (تم تسجيل الحضور بنجاح)', 'success');
         // ✅ 只保存，不清空任何字段
         saveCache();
       } else {
@@ -581,7 +581,7 @@
       submitBtn.classList.remove('loading', 'success');
       submitBtn.classList.add('error');
       submitBtn.innerHTML = '❌ Failed';
-      showToast('❌ Submit failed: ' + err.message, 'error');
+      showToast('❌ Submit failed: ' + err.message + ' (فشل التسجيل)', 'error');
       // ✅ 失败时也保存，保留用户输入
       saveCache();
       setTimeout(() => {
