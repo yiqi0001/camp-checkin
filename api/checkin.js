@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
   const { action, shift, camp, room, totalPeople, headCount, bgpid, dormitoryHead, comment } = req.query;
 
   // ⚠️ 替换成你的真实 Apps Script 地址
-  const SHEET_API_URL = 'https://script.google.com/macros/s/你的真实地址/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycby_d-Q0vryRXKrayiIJYvz54zf8ji6q95rh_2wc4OsstFKEpsr9LH98enHnXxqE4fhe/exec';
 
   // ===== REPORT =====
   if (action === 'report') {
