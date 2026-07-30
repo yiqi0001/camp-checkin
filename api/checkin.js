@@ -88,12 +88,14 @@ if (action === 'checkin') {
   const url = `${SHEET_API_URL}?${params}`;
 
   // 异步执行，不等待结果
-  fetch(url, {
-    signal: AbortSignal.timeout(30000)
-  }).catch(err => {
-    // 静默记录错误，不影响用户
-    console.error('Background sync to Google Sheets failed:', err.message);
-  });
+  fetch(url, { signal: AbortSignal.timeout(30000) })
+      .then(async (response) => {
+        const text = await response.text();
+        console.log('Google Sheets response:', text);
+      })
+      .catch(err => {
+        console.error('Background sync failed:', err.message);
+      });
 
   return; // 已经返回了响应
 }
