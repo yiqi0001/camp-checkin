@@ -545,6 +545,11 @@
       return;
     }
 
+ 	// ===== 👇 在这里添加这一行 =====
+  	// 所有校验通过，清除之前的提示条
+  	toast.className = 'toast';
+  	// ===== 👆 添加结束 =====
+
     // ---- 提交 ----
     submitBtn.disabled = true;
     submitBtn.classList.add('loading');
