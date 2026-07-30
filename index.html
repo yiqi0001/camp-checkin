@@ -570,7 +570,10 @@
           throw new Error('Mock network error');
         }
       } else {
-        const params = new URLSearchParams(payload);
+         const params = new URLSearchParams({
+    action: 'checkin',
+    ...payload
+  });
         const resp = await fetch(`${API_BASE}/checkin?${params}`);
         result = await resp.json();
         if (!resp.ok) throw new Error(result.message || 'Server error');
