@@ -642,47 +642,138 @@ async function loadReport(shift) {
     let data;
     if (USE_MOCK) {
       await new Promise(resolve => setTimeout(resolve, 800));
-      // Mock 数据：根据 shift 返回不同数据
-      if (shift === '1st') {
-        data = {
-          success: true,
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-          shift: '1st',
-          allReported: false,
-          missing: [
-            { room: '101', leader: 'Ahmed', groupLeader: 'Mohammed Al-Fahd', section: 'Section A' },
-            { room: '103', leader: 'Khalid', groupLeader: 'Mohammed Al-Fahd', section: 'Section A' },
-            { room: '201', leader: 'Saud', groupLeader: 'Abdullah Al-Qahtani', section: 'Section B' },
-          ]
-        };
-      } else {
-        data = {
-          success: true,
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-          shift: '2nd',
-          allReported: true,
-          missing: []
-        };
-      }
+      // Mock 数据...
     } else {
-      const resp = await fetch(`${API_BASE}/report?shift=${shift}`);
+      const resp = await fetch(`${API_BASE}/checkin?action=report&shift=${shift}`);
       data = await resp.json();
       if (!resp.ok || !data.success) throw new Error(data.message || 'Report failed');
     }
 
-    renderReport(data, shift);
+    // ===== 生成报告文本 =====
+    const reportText = generateReportText(data, shift);
+    
+    // ===== 复制到剪切板 =====
+    await copyToClipboard(reportText);
+    
+    // ===== 显示在页面上 =====
+    renderReportText(reportText, shift, data);
     reportArea.classList.add('open');
+    
+    // ===== Toast 提示 =====
+    const shiftLabel = shift === '1st' ? '1st' : '2nd';
+    if (data.allReported) {
+      showToast(`✅ ${shiftLabel} Shift: All rooms reported (جميع الغرف موقعة) - Copied (تم النسخ)`, 'success');
+    } else {
+      showToast(`📋 ${shiftLabel} Shift: ${data.totalMissing} rooms missing (${data.totalMissing} غرفة غير موقعة) - Copied to clipboard (تم النسخ)`, 'success');
+    }
 
   } catch (err) {
     showToast('❌ Report failed: ' + err.message + ' (فشل تحميل التقرير)', 'error');
-    reportContent.innerHTML = `<div class="empty-state">❌ Failed to load report: ${err.message}</div>`;
-    reportArea.classList.add('open');
   }
 
   btn.disabled = false;
   btn.innerHTML = originalText;
 }
 
+// ============================================================
+//  渲染报告文本到页面
+// ============================================================
+function renderReportText(text, shift, data) {
+  const reportContent = document.getElementById('reportContent');
+  
+  // 转义 HTML 特殊字符
+  const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  
+  const shiftLabel = shift === '1st' ? '1st Shift' : '2nd Shift';
+  const icon = shift === '1st' ? '🔵' : '🔴';
+  
+  reportContent.innerHTML = `
+    <div style="margin-top: 4px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:15px;font-weight:700;color:#1e2a3a;">${icon} ${shiftLabel} Report</span>
+        <span style="font-size:12px;color:#6a7a8a;">${data.date || 'Today'}</span>
+      </div>
+      <pre style="
+        background: rgba(0,0,0,0.04);
+        padding: 14px 16px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-family: 'Courier New', monospace;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 400px;
+        overflow-y: auto;
+        margin: 0;
+        color: #1e2a3a;
+      ">${escaped}</pre>
+      <div style="font-size:12px;color:#6a7a8a;margin-top:6px;text-align:right;">
+        ✅ Copied to clipboard (تم النسخ إلى الحافظة)
+      </div>
+    </div>
+  `;
+}
+
+// ===== 生成报告文本 =====
+function generateReportText(data, shift) {
+  const shiftLabel = shift === '1st' ? '1st' : '2nd';
+  const lines = [];
+  
+  lines.push(`========================================`);
+  lines.push(`  ${shiftLabel} SHIFT REPORT`);
+  lines.push(`  Date: ${data.date || 'Today'}`);
+  lines.push(`========================================`);
+  lines.push('');
+  
+  if (data.allReported) {
+    lines.push('✅ ALL ROOMS REPORTED');
+    lines.push('   جميع الغرف موقعة');
+    return lines.join('\n');
+  }
+  
+  lines.push(`📋 MISSING ROOMS (${data.totalMissing} rooms)`);
+  lines.push(`   غرف غير موقعة (${data.totalMissing})`);
+  lines.push('');
+  
+  const groups = data.groups || {};
+  for (const key of Object.keys(groups)) {
+    const g = groups[key];
+    lines.push(`📍 ${g.groupLeader}`);
+    lines.push(`   Section: ${g.section}`);
+    for (const room of g.rooms) {
+      lines.push(`      ❌ Room ${room.room} - ${room.leader || 'No leader'}`);
+    }
+    lines.push('');
+  }
+  
+  lines.push(`========================================`);
+  lines.push(`  Total Missing: ${data.totalMissing}`);
+  lines.push(`========================================`);
+  
+  return lines.join('\n');
+}
+// ===== 复制到剪切板 =====
+async function copyToClipboard(text) {
+  // 优先使用 Clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (e) {
+      // 降级方案
+    }
+  }
+  
+  // 降级方案：使用 textarea
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+}
   // ============================================================
   //  RENDER REPORT
   // ============================================================
